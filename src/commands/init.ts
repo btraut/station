@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { ensureStationLayout, resolveStationPaths } from '../core/paths.js';
 import { success } from '../core/output.js';
+import { ensureDatabase } from '../db/database.js';
 
 export function registerInitCommand(program: Command): void {
   program
@@ -8,13 +9,14 @@ export function registerInitCommand(program: Command): void {
     .description('Initialize station repo-local state in .station/')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
-      const wantsJson = process.argv.includes("--json");
+      const wantsJson = process.argv.includes('--json');
       const paths = await resolveStationPaths();
       await ensureStationLayout(paths);
+      await ensureDatabase(paths.dbPath);
 
       if (wantsJson) {
         process.stdout.write(
-          `${JSON.stringify(success({ initialized: true, stationDir: paths.stationDir }), null, 2)}\n`
+          `${JSON.stringify(success({ initialized: true, stationDir: paths.stationDir, dbPath: paths.dbPath }), null, 2)}\n`
         );
         return;
       }

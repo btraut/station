@@ -8,9 +8,6 @@ export default [
     files: ['**/*.ts'],
     languageOptions: {
       parser: tsParser,
-      parserOptions: {
-        project: './tsconfig.json'
-      },
       globals: {
         console: 'readonly',
         process: 'readonly'

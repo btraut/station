@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { ensureStationLayout, readConfig, resolveStationPaths } from '../core/paths.js';
 import { success } from '../core/output.js';
+import { ensureDatabase } from '../db/database.js';
 
 export function registerInfoCommand(program: Command): void {
   program
@@ -8,9 +9,10 @@ export function registerInfoCommand(program: Command): void {
     .description('Show current station configuration')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
-      const wantsJson = process.argv.includes("--json");
+      const wantsJson = process.argv.includes('--json');
       const paths = await resolveStationPaths();
       await ensureStationLayout(paths);
+      await ensureDatabase(paths.dbPath);
       const config = await readConfig(paths);
 
       const payload = {
