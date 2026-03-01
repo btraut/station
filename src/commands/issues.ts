@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { StationError } from '../core/errors.js';
 import { success } from '../core/output.js';
 import { withRepository, wantsJson } from '../core/runtime.js';
+import type { IssueFilters } from '../db/repository.js';
 import type { IssueStatus } from '../core/models.js';
 
 const VALID_STATUSES: IssueStatus[] = ['open', 'in_progress', 'closed'];
@@ -19,6 +20,17 @@ function nextIssueId(existingIds: string[]): string {
   }
 
   return `station-${Math.max(...numbers) + 1}`;
+}
+
+function parseCsv(value: string | undefined): string[] | undefined {
+  if (!value) {
+    return undefined;
+  }
+
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
 }
 
 function validateStatus(value: string | undefined): IssueStatus | undefined {
@@ -47,6 +59,21 @@ function parsePriority(value: string | undefined): number | undefined {
     });
   }
   return parsed;
+}
+
+function parseIssueFilters(options: Record<string, string | undefined>): IssueFilters {
+  const statuses = (parseCsv(options.status) ?? []).map((value) => validateStatus(value) as IssueStatus);
+  const priorities = (parseCsv(options.priority) ?? []).map((value) => parsePriority(value) as number);
+
+  return {
+    ids: parseCsv(options.ids),
+    statuses,
+    priorities,
+    types: parseCsv(options.type),
+    labelsAny: parseCsv(options.labelsAny),
+    labelsAll: parseCsv(options.labelsAll),
+    query: options.query
+  };
 }
 
 export function registerIssueCommands(program: Command): void {
@@ -93,9 +120,26 @@ export function registerIssueCommands(program: Command): void {
   program
     .command('list')
     .description('List issues')
+    .option('--status <csv>', 'Filter by status (csv)')
+    .option('--priority <csv>', 'Filter by priority (csv 0-4)')
+    .option('--type <csv>', 'Filter by type (csv)')
+    .option('--ids <csv>', 'Filter by issue ids (csv)')
+    .option('--labels-any <csv>', 'Filter by labels (any match)')
+    .option('--labels-all <csv>', 'Filter by labels (all must match)')
+    .option('--query <query>', 'Filter by text search in title/description/notes')
     .option('--json', 'Output machine-readable JSON', false)
-    .action(async () => {
-      const issues = await withRepository((repo) => repo.listIssues());
+    .action(async (options) => {
+      const filters = parseIssueFilters({
+        status: options.status,
+        priority: options.priority,
+        type: options.type,
+        ids: options.ids,
+        labelsAny: options.labelsAny,
+        labelsAll: options.labelsAll,
+        query: options.query
+      });
+
+      const issues = await withRepository((repo) => repo.listIssues(filters));
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issues }), null, 2)}\n`);

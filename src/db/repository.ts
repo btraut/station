@@ -19,6 +19,8 @@ export type IssueFilters = {
   statuses?: IssueStatus[];
   priorities?: number[];
   types?: string[];
+  labelsAny?: string[];
+  labelsAll?: string[];
   query?: string;
 };
 
@@ -126,34 +128,60 @@ export class StationRepository {
     const values: unknown[] = [];
 
     if (filters?.ids && filters.ids.length > 0) {
-      where.push(`id IN (${filters.ids.map(() => '?').join(', ')})`);
+      where.push(`i.id IN (${filters.ids.map(() => '?').join(', ')})`);
       values.push(...filters.ids);
     }
 
     if (filters?.statuses && filters.statuses.length > 0) {
-      where.push(`status IN (${filters.statuses.map(() => '?').join(', ')})`);
+      where.push(`i.status IN (${filters.statuses.map(() => '?').join(', ')})`);
       values.push(...filters.statuses);
     }
 
     if (filters?.priorities && filters.priorities.length > 0) {
-      where.push(`priority IN (${filters.priorities.map(() => '?').join(', ')})`);
+      where.push(`i.priority IN (${filters.priorities.map(() => '?').join(', ')})`);
       values.push(...filters.priorities);
     }
 
     if (filters?.types && filters.types.length > 0) {
-      where.push(`type IN (${filters.types.map(() => '?').join(', ')})`);
+      where.push(`i.type IN (${filters.types.map(() => '?').join(', ')})`);
       values.push(...filters.types);
     }
 
+    if (filters?.labelsAny && filters.labelsAny.length > 0) {
+      where.push(
+        `EXISTS (
+          SELECT 1 FROM issue_labels il
+          WHERE il.issue_id = i.id
+          AND il.label_name IN (${filters.labelsAny.map(() => '?').join(', ')})
+        )`
+      );
+      values.push(...filters.labelsAny);
+    }
+
+    if (filters?.labelsAll && filters.labelsAll.length > 0) {
+      for (const label of filters.labelsAll) {
+        where.push(
+          `EXISTS (
+            SELECT 1 FROM issue_labels il
+            WHERE il.issue_id = i.id
+            AND il.label_name = ?
+          )`
+        );
+        values.push(label);
+      }
+    }
+
     if (filters?.query) {
-      where.push('(title LIKE ? OR COALESCE(description, \'\') LIKE ? OR COALESCE(notes, \'\') LIKE ?)');
+      where.push(
+        '(i.title LIKE ? OR COALESCE(i.description, \'\') LIKE ? OR COALESCE(i.notes, \'\') LIKE ?)'
+      );
       const query = `%${filters.query}%`;
       values.push(query, query, query);
     }
 
     const whereClause = where.length === 0 ? '' : `WHERE ${where.join(' AND ')}`;
     const rows = this.db
-      .prepare(`SELECT * FROM issues ${whereClause} ORDER BY priority ASC, created_at ASC, id ASC`)
+      .prepare(`SELECT i.* FROM issues i ${whereClause} ORDER BY i.priority ASC, i.created_at ASC, i.id ASC`)
       .all(...values) as Record<string, unknown>[];
 
     return rows.map(rowToIssue);
