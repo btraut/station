@@ -1,4 +1,5 @@
 import { Command } from 'commander';
+import { listBackendAdapters } from '../backend/registry.js';
 import { ensureStationLayout, readConfig, resolveStationPaths } from '../core/paths.js';
 import { success } from '../core/output.js';
 import { ensureDatabase } from '../db/database.js';
@@ -19,7 +20,11 @@ export function registerInfoCommand(program: Command): void {
         repoRoot: paths.repoRoot,
         stationDir: paths.stationDir,
         dbPath: paths.dbPath,
-        config
+        config,
+        backends: listBackendAdapters().map((backend) => ({
+          name: backend.name,
+          supported: backend.supported
+        }))
       };
 
       if (wantsJson) {

@@ -1,6 +1,7 @@
-import { ensureStationLayout, resolveStationPaths } from './paths.js';
-import { ensureDatabase, openDatabase } from '../db/database.js';
-import { StationRepository } from '../db/repository.js';
+import { getBackendAdapter } from '../backend/registry.js';
+import type { StationRepository } from '../db/repository.js';
+import { ensureDatabase } from '../db/database.js';
+import { ensureStationLayout, readConfig, resolveStationPaths } from './paths.js';
 
 export function wantsJson(): boolean {
   return process.argv.includes('--json');
@@ -9,12 +10,17 @@ export function wantsJson(): boolean {
 export async function withRepository<T>(fn: (repo: StationRepository) => T): Promise<T> {
   const paths = await resolveStationPaths();
   await ensureStationLayout(paths);
-  await ensureDatabase(paths.dbPath);
 
-  const db = openDatabase(paths.dbPath);
+  const config = await readConfig(paths);
+  if (config.backend === 'sqlite') {
+    await ensureDatabase(paths.dbPath);
+  }
+
+  const adapter = getBackendAdapter(config.backend);
+  const session = adapter.open(paths);
   try {
-    return fn(new StationRepository(db));
+    return fn(session.repository);
   } finally {
-    db.close();
+    session.close();
   }
 }
