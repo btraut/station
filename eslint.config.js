@@ -9,6 +9,7 @@ export default [
     languageOptions: {
       parser: tsParser,
       globals: {
+        Buffer: 'readonly',
         console: 'readonly',
         process: 'readonly'
       }
@@ -17,7 +18,8 @@ export default [
       '@typescript-eslint': tsPlugin
     },
     rules: {
-      '@typescript-eslint/no-explicit-any': 'error'
+      '@typescript-eslint/no-explicit-any': 'error',
+      'no-unused-vars': 'off'
     }
   },
   {
