@@ -5,6 +5,15 @@ import tsParser from '@typescript-eslint/parser';
 export default [
   js.configs.recommended,
   {
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly'
+      }
+    }
+  },
+  {
     files: ['**/*.ts'],
     languageOptions: {
       parser: tsParser,

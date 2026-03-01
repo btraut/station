@@ -18,7 +18,13 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "release:dry-run:patch": "node scripts/release.mjs patch --dry-run",
+    "release:dry-run:minor": "node scripts/release.mjs minor --dry-run",
+    "release:dry-run:major": "node scripts/release.mjs major --dry-run",
+    "release:patch": "node scripts/release.mjs patch",
+    "release:minor": "node scripts/release.mjs minor",
+    "release:major": "node scripts/release.mjs major"
   },
   "engines": {
     "node": ">=20"
