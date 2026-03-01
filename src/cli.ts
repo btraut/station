@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { registerInitCommand } from './commands/init.js';
 import { registerInfoCommand } from './commands/info.js';
 import { registerIssueCommands } from './commands/issues.js';
+import { registerDependencyCommands } from './commands/deps.js';
 import { failure, printJson } from './core/output.js';
 import { isStationError } from './core/errors.js';
 
@@ -16,6 +17,7 @@ program
 registerInitCommand(program);
 registerInfoCommand(program);
 registerIssueCommands(program);
+registerDependencyCommands(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   if (isStationError(error)) {

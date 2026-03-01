@@ -14,6 +14,14 @@ export type CreateIssueInput = {
   acceptance?: string | null;
 };
 
+export type IssueFilters = {
+  ids?: string[];
+  statuses?: IssueStatus[];
+  priorities?: number[];
+  types?: string[];
+  query?: string;
+};
+
 function rowToIssue(row: Record<string, unknown>): Issue {
   return {
     id: String(row.id),
@@ -113,16 +121,60 @@ export class StationRepository {
     return this.getIssueOrThrow(id);
   }
 
-  listIssues(): Issue[] {
+  listIssues(filters?: IssueFilters): Issue[] {
+    const where: string[] = [];
+    const values: unknown[] = [];
+
+    if (filters?.ids && filters.ids.length > 0) {
+      where.push(`id IN (${filters.ids.map(() => '?').join(', ')})`);
+      values.push(...filters.ids);
+    }
+
+    if (filters?.statuses && filters.statuses.length > 0) {
+      where.push(`status IN (${filters.statuses.map(() => '?').join(', ')})`);
+      values.push(...filters.statuses);
+    }
+
+    if (filters?.priorities && filters.priorities.length > 0) {
+      where.push(`priority IN (${filters.priorities.map(() => '?').join(', ')})`);
+      values.push(...filters.priorities);
+    }
+
+    if (filters?.types && filters.types.length > 0) {
+      where.push(`type IN (${filters.types.map(() => '?').join(', ')})`);
+      values.push(...filters.types);
+    }
+
+    if (filters?.query) {
+      where.push('(title LIKE ? OR COALESCE(description, \'\') LIKE ? OR COALESCE(notes, \'\') LIKE ?)');
+      const query = `%${filters.query}%`;
+      values.push(query, query, query);
+    }
+
+    const whereClause = where.length === 0 ? '' : `WHERE ${where.join(' AND ')}`;
     const rows = this.db
-      .prepare('SELECT * FROM issues ORDER BY created_at ASC, id ASC')
-      .all() as Record<string, unknown>[];
+      .prepare(`SELECT * FROM issues ${whereClause} ORDER BY priority ASC, created_at ASC, id ASC`)
+      .all(...values) as Record<string, unknown>[];
+
     return rows.map(rowToIssue);
   }
 
   addDependency(dependency: Dependency): void {
     this.getIssueOrThrow(dependency.issueId);
     this.getIssueOrThrow(dependency.dependsOnId);
+
+    if (dependency.issueId === dependency.dependsOnId) {
+      throw new StationError('An issue cannot depend on itself', {
+        code: 'DEPENDENCY_SELF_REFERENCE'
+      });
+    }
+
+    if (this.wouldCreateCycle(dependency.issueId, dependency.dependsOnId, dependency.type)) {
+      throw new StationError('Dependency would create a cycle', {
+        code: 'DEPENDENCY_CYCLE',
+        details: dependency
+      });
+    }
 
     this.db
       .prepare(
@@ -142,16 +194,84 @@ export class StationRepository {
       .run(issueId, dependsOnId, type);
   }
 
-  listDependencies(issueId: string): Dependency[] {
+  listDependencies(issueId?: string, type?: DependencyType): Dependency[] {
+    const where: string[] = [];
+    const values: unknown[] = [];
+
+    if (issueId) {
+      where.push('issue_id = ?');
+      values.push(issueId);
+    }
+
+    if (type) {
+      where.push('dep_type = ?');
+      values.push(type);
+    }
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(' AND ')}` : '';
     const rows = this.db
-      .prepare('SELECT issue_id, depends_on_id, dep_type FROM dependencies WHERE issue_id = ? ORDER BY depends_on_id ASC')
-      .all(issueId) as Array<Record<string, unknown>>;
+      .prepare(
+        `SELECT issue_id, depends_on_id, dep_type FROM dependencies ${whereClause} ORDER BY issue_id ASC, depends_on_id ASC`
+      )
+      .all(...values) as Array<Record<string, unknown>>;
 
     return rows.map((row) => ({
       issueId: String(row.issue_id),
       dependsOnId: String(row.depends_on_id),
       type: row.dep_type as DependencyType
     }));
+  }
+
+  listDependencyTree(issueId: string, type: DependencyType): Dependency[] {
+    this.getIssueOrThrow(issueId);
+
+    const rows = this.db
+      .prepare(
+        `
+        WITH RECURSIVE dep_tree(issue_id, depends_on_id, dep_type) AS (
+          SELECT issue_id, depends_on_id, dep_type
+          FROM dependencies
+          WHERE issue_id = ? AND dep_type = ?
+          UNION ALL
+          SELECT d.issue_id, d.depends_on_id, d.dep_type
+          FROM dependencies d
+          INNER JOIN dep_tree t ON d.issue_id = t.depends_on_id
+          WHERE d.dep_type = ?
+        )
+        SELECT DISTINCT issue_id, depends_on_id, dep_type FROM dep_tree
+        ORDER BY issue_id ASC, depends_on_id ASC
+      `
+      )
+      .all(issueId, type, type) as Array<Record<string, unknown>>;
+
+    return rows.map((row) => ({
+      issueId: String(row.issue_id),
+      dependsOnId: String(row.depends_on_id),
+      type: row.dep_type as DependencyType
+    }));
+  }
+
+  listReadyIssues(): Issue[] {
+    const rows = this.db
+      .prepare(
+        `
+        SELECT i.*
+        FROM issues i
+        WHERE i.status != 'closed'
+          AND NOT EXISTS (
+            SELECT 1
+            FROM dependencies d
+            JOIN issues blockers ON blockers.id = d.depends_on_id
+            WHERE d.issue_id = i.id
+              AND d.dep_type = 'blocks'
+              AND blockers.status != 'closed'
+          )
+        ORDER BY i.priority ASC, i.created_at ASC, i.id ASC
+      `
+      )
+      .all() as Record<string, unknown>[];
+
+    return rows.map(rowToIssue);
   }
 
   upsertLabel(name: string): void {
@@ -188,5 +308,30 @@ export class StationRepository {
       .prepare('SELECT name FROM labels ORDER BY name ASC')
       .all() as Array<Record<string, unknown>>;
     return rows.map((row) => String(row.name));
+  }
+
+  private wouldCreateCycle(issueId: string, dependsOnId: string, type: DependencyType): boolean {
+    const row = this.db
+      .prepare(
+        `
+        WITH RECURSIVE walk(issue_id, depends_on_id) AS (
+          SELECT issue_id, depends_on_id
+          FROM dependencies
+          WHERE issue_id = ? AND dep_type = ?
+          UNION ALL
+          SELECT d.issue_id, d.depends_on_id
+          FROM dependencies d
+          JOIN walk w ON d.issue_id = w.depends_on_id
+          WHERE d.dep_type = ?
+        )
+        SELECT 1 as found
+        FROM walk
+        WHERE depends_on_id = ?
+        LIMIT 1
+      `
+      )
+      .get(dependsOnId, type, type, issueId) as { found?: number } | undefined;
+
+    return row?.found === 1;
   }
 }
