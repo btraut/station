@@ -2,8 +2,8 @@ import { Command } from 'commander';
 import { StationError } from '../core/errors.js';
 import { success } from '../core/output.js';
 import { withRepository, wantsJson } from '../core/runtime.js';
-import type { IssueFilters } from '../db/repository.js';
 import type { IssueStatus } from '../core/models.js';
+import type { IssueFilters } from '../db/repository.js';
 
 const VALID_STATUSES: IssueStatus[] = ['open', 'in_progress', 'closed'];
 
@@ -74,6 +74,23 @@ function parseIssueFilters(options: Record<string, string | undefined>): IssueFi
     labelsAll: parseCsv(options.labelsAll),
     query: options.query
   };
+}
+
+function registerReopenLikeCommand(program: Command, name: 'reopen' | 'open', description: string): void {
+  program
+    .command(`${name} <id>`)
+    .description(description)
+    .option('--json', 'Output machine-readable JSON', false)
+    .action(async (id: string) => {
+      const issue = await withRepository((repo) => repo.updateIssue(id, { status: 'open' }));
+
+      if (wantsJson()) {
+        process.stdout.write(`${JSON.stringify(success({ issue }), null, 2)}\n`);
+        return;
+      }
+
+      process.stdout.write(`Reopened ${issue.id}\n`);
+    });
 }
 
 export function registerIssueCommands(program: Command): void {
@@ -238,18 +255,6 @@ export function registerIssueCommands(program: Command): void {
       process.stdout.write(`Closed ${issue.id}\n`);
     });
 
-  program
-    .command('reopen <id>')
-    .description('Reopen a closed issue')
-    .option('--json', 'Output machine-readable JSON', false)
-    .action(async (id: string) => {
-      const issue = await withRepository((repo) => repo.updateIssue(id, { status: 'open' }));
-
-      if (wantsJson()) {
-        process.stdout.write(`${JSON.stringify(success({ issue }), null, 2)}\n`);
-        return;
-      }
-
-      process.stdout.write(`Reopened ${issue.id}\n`);
-    });
+  registerReopenLikeCommand(program, 'reopen', 'Reopen a closed issue');
+  registerReopenLikeCommand(program, 'open', 'Alias for reopen');
 }

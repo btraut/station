@@ -54,7 +54,7 @@ describe('lifecycle commands', () => {
     const closed = runJson(repo, ['close', issueId]) as { ok: true; data: { issue: { status: string } } };
     expect(closed.data.issue.status).toBe('closed');
 
-    const reopened = runJson(repo, ['reopen', issueId]) as { ok: true; data: { issue: { status: string } } };
+    const reopened = runJson(repo, ['open', issueId]) as { ok: true; data: { issue: { status: string } } };
     expect(reopened.data.issue.status).toBe('open');
 
     const shown = runJson(repo, ['show', issueId]) as { ok: true; data: { issue: { id: string } } };
