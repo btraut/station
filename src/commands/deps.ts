@@ -1,25 +1,7 @@
 import { Command } from 'commander';
-import type { DependencyType } from '../core/models.js';
-import { StationError } from '../core/errors.js';
+import { parseDependencyType } from '../core/cli-parsers.js';
 import { success } from '../core/output.js';
 import { withRepository, wantsJson } from '../core/runtime.js';
-
-const DEP_TYPES: DependencyType[] = ['blocks', 'related', 'discovered_from', 'child'];
-
-function parseType(value?: string): DependencyType {
-  if (!value) {
-    return 'blocks';
-  }
-
-  if (!DEP_TYPES.includes(value as DependencyType)) {
-    throw new StationError(`Invalid dependency type: ${value}`, {
-      code: 'INVALID_DEPENDENCY_TYPE',
-      details: { allowed: DEP_TYPES }
-    });
-  }
-
-  return value as DependencyType;
-}
 
 export function registerDependencyCommands(program: Command): void {
   const dep = program.command('dep').description('Dependency graph commands');
@@ -30,7 +12,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, dependsOnId: string, options) => {
-      const type = parseType(options.type);
+      const type = parseDependencyType(options.type);
 
       await withRepository((repo) => {
         repo.addDependency({ issueId, dependsOnId, type });
@@ -52,7 +34,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, dependsOnId: string, options) => {
-      const type = parseType(options.type);
+      const type = parseDependencyType(options.type);
 
       await withRepository((repo) => {
         repo.removeDependency(issueId, dependsOnId, type);
@@ -74,7 +56,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type filter')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string | undefined, options) => {
-      const type = options.type ? parseType(options.type) : undefined;
+      const type = options.type ? parseDependencyType(options.type) : undefined;
       const dependencies = await withRepository((repo) => repo.listDependencies(issueId, type));
 
       if (wantsJson()) {
@@ -98,7 +80,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, options) => {
-      const type = parseType(options.type);
+      const type = parseDependencyType(options.type);
       const dependencies = await withRepository((repo) => repo.listDependencyTree(issueId, type));
 
       if (wantsJson()) {

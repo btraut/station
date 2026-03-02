@@ -1,11 +1,8 @@
 import { Command } from 'commander';
 import { StationError } from '../core/errors.js';
+import { parseIssueFilters, parseIssueStatus, parsePriority } from '../core/cli-parsers.js';
 import { success } from '../core/output.js';
 import { withRepository, wantsJson } from '../core/runtime.js';
-import type { IssueStatus } from '../core/models.js';
-import type { IssueFilters } from '../db/repository.js';
-
-const VALID_STATUSES: IssueStatus[] = ['open', 'in_progress', 'closed'];
 
 function nextIssueId(existingIds: string[]): string {
   const numbers = existingIds
@@ -20,60 +17,6 @@ function nextIssueId(existingIds: string[]): string {
   }
 
   return `station-${Math.max(...numbers) + 1}`;
-}
-
-function parseCsv(value: string | undefined): string[] | undefined {
-  if (!value) {
-    return undefined;
-  }
-
-  return value
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter((entry) => entry.length > 0);
-}
-
-function validateStatus(value: string | undefined): IssueStatus | undefined {
-  if (!value) {
-    return undefined;
-  }
-  if (!VALID_STATUSES.includes(value as IssueStatus)) {
-    throw new StationError(`Invalid status: ${value}`, {
-      code: 'INVALID_STATUS',
-      details: { allowed: VALID_STATUSES }
-    });
-  }
-  return value as IssueStatus;
-}
-
-function parsePriority(value: string | undefined): number | undefined {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0 || parsed > 4) {
-    throw new StationError('Priority must be an integer between 0 and 4', {
-      code: 'INVALID_PRIORITY',
-      details: { value }
-    });
-  }
-  return parsed;
-}
-
-function parseIssueFilters(options: Record<string, string | undefined>): IssueFilters {
-  const statuses = (parseCsv(options.status) ?? []).map((value) => validateStatus(value) as IssueStatus);
-  const priorities = (parseCsv(options.priority) ?? []).map((value) => parsePriority(value) as number);
-
-  return {
-    ids: parseCsv(options.ids),
-    statuses,
-    priorities,
-    types: parseCsv(options.type),
-    labelsAny: parseCsv(options.labelsAny),
-    labelsAll: parseCsv(options.labelsAll),
-    query: options.query
-  };
 }
 
 function registerReopenLikeCommand(program: Command, name: 'reopen' | 'open', description: string): void {
@@ -110,7 +53,7 @@ export function registerIssueCommands(program: Command): void {
     .action(async (options) => {
       const created = await withRepository((repo) => {
         const id = options.id ?? nextIssueId(repo.listIssues().map((issue) => issue.id));
-        const status = validateStatus(options.status) ?? 'open';
+        const status = parseIssueStatus(options.status) ?? 'open';
         const priority = parsePriority(options.priority) ?? 2;
 
         return repo.createIssue({
@@ -224,7 +167,7 @@ export function registerIssueCommands(program: Command): void {
           title: options.title,
           type: options.type,
           priority: parsePriority(options.priority),
-          status: validateStatus(options.status),
+          status: parseIssueStatus(options.status),
           description: options.description,
           design: options.design,
           notes: options.notes,
