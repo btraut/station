@@ -2,11 +2,13 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const tempDirs: string[] = [];
-const cliPath = '/Users/btraut/Development/station/src/cli.ts';
-const tsxPath = '/Users/btraut/Development/station/node_modules/.bin/tsx';
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const cliPath = path.join(repoRoot, 'src', 'cli.ts');
+const tsxPath = path.join(repoRoot, 'node_modules', '.bin', process.platform === 'win32' ? 'tsx.cmd' : 'tsx');
 
 function createRepo(): string {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'station-scope-'));
