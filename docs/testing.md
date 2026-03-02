@@ -31,6 +31,11 @@ Station uses a strict test pyramid. Fast tests guard contracts first; slower tes
   - CLI e2e lane: <=25s.
   - Smoke lane: <=15s.
 - CI should fail if any lane exceeds budget by more than 20%.
+- Budget-enforced CI commands:
+  - `npm run ci:test:unit`
+  - `npm run ci:test:integration`
+  - `npm run ci:test:e2e`
+  - `npm run ci:test:smoke`
 
 ## Conventions
 

@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  test:
+  quality:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,5 +28,33 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Test
-        run: npm test
+  test-lanes:
+    name: Test (${{ matrix.lane }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lane: unit
+            script: ci:test:unit
+          - lane: integration
+            script: ci:test:integration
+          - lane: e2e
+            script: ci:test:e2e
+          - lane: smoke
+            script: ci:test:smoke
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ${{ matrix.lane }} tests
+        run: npm run ${{ matrix.script }}
