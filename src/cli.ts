@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { createRequire } from 'node:module';
 import { Command } from 'commander';
 import { registerInitCommand } from './commands/init.js';
 import { registerInfoCommand } from './commands/info.js';
@@ -7,6 +8,9 @@ import { registerDependencyCommands } from './commands/deps.js';
 import { registerLabelCommands } from './commands/labels.js';
 import { failure, printJson } from './core/output.js';
 import { isStationError, StationError } from './core/errors.js';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('../package.json') as { version: string };
 
 const EXCLUDED_V1_FAMILIES = new Set([
   'sync',
@@ -43,6 +47,7 @@ const program = new Command();
 program
   .name('station')
   .description('Station CLI - repo-scoped single-user issue tracking')
+  .version(packageJson.version, '-v, --version', 'Output Station version')
   .option('--json', 'Output machine-readable JSON envelope for top-level errors', false)
   .showHelpAfterError();
 

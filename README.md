@@ -103,6 +103,7 @@ Example error (`station sync --json`):
 
 - `station init`
 - `station info`
+- `station -v` / `station --version`
 - `station create --title <title> [--type] [--priority] [--description] [--design] [--notes] [--acceptance] [--status]`
 - `station list [--status csv] [--priority csv] [--type csv] [--ids csv] [--labels-any csv] [--labels-all csv] [--query text]`
 - `station show <id>`
