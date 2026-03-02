@@ -150,3 +150,5 @@ npm run lint
 npm run typecheck
 npm test
 ```
+
+Testing pyramid, layer ownership, and runtime budgets: [`docs/testing.md`](docs/testing.md).
