@@ -143,6 +143,16 @@ Excluded in v1:
 - sync/daemon/import-export/migrate/admin/agents/worktrees/gates/chemistry
 - multi-user collaboration workflows
 
+## Agent Skill
+
+This repo includes an installable Station agent skill at [`skills/station`](skills/station).
+
+Copy it into your skills directory:
+
+```bash
+cp -r skills/station ~/.agents/skills/
+```
+
 ## Development
 
 ```bash
