@@ -12,7 +12,13 @@ It teaches agents how to:
 
 ## Installation
 
-Copy this directory into your skills directory.
+Recommended:
+
+```bash
+station skill install
+```
+
+Manual copy (advanced):
 
 ```bash
 # Global
