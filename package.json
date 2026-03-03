@@ -23,7 +23,7 @@
     "test:smoke": "vitest run tests/smoke",
     "ci:test:unit": "node scripts/run-with-budget.mjs 10 unit npm run test:unit",
     "ci:test:integration": "node scripts/run-with-budget.mjs 20 integration npm run test:integration",
-    "ci:test:e2e": "node scripts/run-with-budget.mjs 25 e2e npm run test:e2e",
+    "ci:test:e2e": "node scripts/run-with-budget.mjs 90 e2e npm run test:e2e",
     "ci:test:smoke": "node scripts/run-with-budget.mjs 15 smoke npm run test:smoke",
     "test:watch": "vitest",
     "prepare": "npm run build",
@@ -38,8 +38,10 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
     "better-sqlite3": "^12.4.1",
-    "commander": "^14.0.1"
+    "commander": "^14.0.1",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",

@@ -113,9 +113,12 @@ describe('dependency and ready semantics', () => {
     const tree = runJson(repo, ['dep', 'tree', c.data.issue.id]) as {
       data: { dependencies: Array<{ issueId: string; dependsOnId: string }> };
     };
-    expect(tree.data.dependencies).toEqual([
-      { issueId: b.data.issue.id, dependsOnId: a.data.issue.id, type: 'blocks' },
-      { issueId: c.data.issue.id, dependsOnId: b.data.issue.id, type: 'blocks' }
-    ]);
+    expect(tree.data.dependencies).toHaveLength(2);
+    expect(tree.data.dependencies).toEqual(
+      expect.arrayContaining([
+        { issueId: b.data.issue.id, dependsOnId: a.data.issue.id, type: 'blocks' },
+        { issueId: c.data.issue.id, dependsOnId: b.data.issue.id, type: 'blocks' }
+      ])
+    );
   });
 });

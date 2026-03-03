@@ -1,7 +1,13 @@
 import { Command } from 'commander';
-import { parseDependencyType } from '../core/cli-parsers.js';
 import { success } from '../core/output.js';
-import { withRepository, wantsJson } from '../core/runtime.js';
+import { wantsJson } from '../core/runtime.js';
+import {
+  addDependency,
+  listDependencies,
+  listDependencyTree,
+  listReadyIssues,
+  removeDependency
+} from '../services/dependencies.js';
 
 export function registerDependencyCommands(program: Command): void {
   const dep = program.command('dep').description('Dependency graph commands');
@@ -12,20 +18,14 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, dependsOnId: string, options) => {
-      const type = parseDependencyType(options.type);
-
-      await withRepository((repo) => {
-        repo.addDependency({ issueId, dependsOnId, type });
-      });
+      const dependency = await addDependency(issueId, dependsOnId, options.type);
 
       if (wantsJson()) {
-        process.stdout.write(
-          `${JSON.stringify(success({ dependency: { issueId, dependsOnId, type } }), null, 2)}\n`
-        );
+        process.stdout.write(`${JSON.stringify(success({ dependency }), null, 2)}\n`);
         return;
       }
 
-      process.stdout.write(`Added ${type} dependency: ${issueId} -> ${dependsOnId}\n`);
+      process.stdout.write(`Added ${dependency.type} dependency: ${issueId} -> ${dependsOnId}\n`);
     });
 
   dep
@@ -34,20 +34,16 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, dependsOnId: string, options) => {
-      const type = parseDependencyType(options.type);
-
-      await withRepository((repo) => {
-        repo.removeDependency(issueId, dependsOnId, type);
-      });
+      const dependency = await removeDependency(issueId, dependsOnId, options.type);
 
       if (wantsJson()) {
         process.stdout.write(
-          `${JSON.stringify(success({ removed: true, dependency: { issueId, dependsOnId, type } }), null, 2)}\n`
+          `${JSON.stringify(success({ removed: true, dependency }), null, 2)}\n`
         );
         return;
       }
 
-      process.stdout.write(`Removed ${type} dependency: ${issueId} -> ${dependsOnId}\n`);
+      process.stdout.write(`Removed ${dependency.type} dependency: ${issueId} -> ${dependsOnId}\n`);
     });
 
   dep
@@ -56,8 +52,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type filter')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string | undefined, options) => {
-      const type = options.type ? parseDependencyType(options.type) : undefined;
-      const dependencies = await withRepository((repo) => repo.listDependencies(issueId, type));
+      const dependencies = await listDependencies(issueId, options.type);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ dependencies }), null, 2)}\n`);
@@ -80,8 +75,7 @@ export function registerDependencyCommands(program: Command): void {
     .option('--type <type>', 'Dependency type', 'blocks')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, options) => {
-      const type = parseDependencyType(options.type);
-      const dependencies = await withRepository((repo) => repo.listDependencyTree(issueId, type));
+      const dependencies = await listDependencyTree(issueId, options.type);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ dependencies }), null, 2)}\n`);
@@ -103,7 +97,7 @@ export function registerDependencyCommands(program: Command): void {
     .description('List actionable unblocked issues')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
-      const issues = await withRepository((repo) => repo.listReadyIssues());
+      const issues = await listReadyIssues();
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issues }), null, 2)}\n`);

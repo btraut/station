@@ -5,6 +5,14 @@
 - Station is single-user and repo-scoped.
 - `<git-common-dir>/station/station.db` is the source of truth.
 - `station init` is idempotent; run it safely in existing repos.
+- MCP runtime is daemon-free: `station mcp` runs as a foreground stdio process per client session.
+
+## MCP operations
+
+- Entry command: `station mcp`
+- Station does not require or spawn a background daemon in v1.
+- MCP tool semantics mirror CLI command semantics, including alias behavior (`open` == `reopen`).
+- Nested command families are exposed as dotted tools: `dep.*` and `label.*`.
 
 ## Backend behavior
 
@@ -27,3 +35,4 @@ Running one of those returns `V1_SCOPE_EXCLUDED` with structured error details.
 - `BACKEND_NOT_IMPLEMENTED`: switch `<git-common-dir>/station/config.json` backend to `sqlite`.
 - `STATION_DB_BUSY`: another process holds a write lock; retry shortly.
 - `STATION_DB_CONFLICT`: write collided on a uniqueness constraint (for example duplicate explicit issue id).
+- MCP `isError: true`: inspect returned Station envelope for `error.code`, `error.message`, and `error.details`.
