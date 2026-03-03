@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -5,6 +6,7 @@ import { StationError } from './errors.js';
 
 export type StationPaths = {
   repoRoot: string;
+  gitCommonDir: string;
   stationDir: string;
   dbPath: string;
   configPath: string;
@@ -12,11 +14,12 @@ export type StationPaths = {
 };
 
 export async function resolveStationPaths(startDir = process.cwd()): Promise<StationPaths> {
-  const repoRoot = findRepoRoot(startDir);
-  const stationDir = path.join(repoRoot, '.station');
+  const { repoRoot, gitCommonDir } = resolveGitContext(startDir);
+  const stationDir = path.join(gitCommonDir, 'station');
 
   return {
     repoRoot,
+    gitCommonDir,
     stationDir,
     dbPath: path.join(stationDir, 'station.db'),
     configPath: path.join(stationDir, 'config.json'),
@@ -55,4 +58,34 @@ function findRepoRoot(startDir: string): string {
     }
     current = parent;
   }
+}
+
+function resolveGitContext(startDir: string): { repoRoot: string; gitCommonDir: string } {
+  try {
+    const repoRoot = runGit(['rev-parse', '--show-toplevel'], startDir);
+    const rawGitCommonDir = runGit(['rev-parse', '--git-common-dir'], startDir);
+    const gitCommonDir = path.isAbsolute(rawGitCommonDir)
+      ? rawGitCommonDir
+      : path.resolve(repoRoot, rawGitCommonDir);
+
+    return {
+      repoRoot: path.resolve(repoRoot),
+      gitCommonDir: path.resolve(gitCommonDir)
+    };
+  } catch {
+    const repoRoot = findRepoRoot(startDir);
+    return {
+      repoRoot,
+      gitCommonDir: path.join(repoRoot, '.git')
+    };
+  }
+}
+
+function runGit(args: string[], cwd: string): string {
+  return execFileSync('git', args, {
+    cwd,
+    stdio: ['ignore', 'pipe', 'ignore']
+  })
+    .toString()
+    .trim();
 }

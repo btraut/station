@@ -72,8 +72,11 @@ describe('cli contract e2e', () => {
     const depRepo = createRepo();
 
     runJson(invalidRepo, ['init']);
+    const invalidInfo = runJson(invalidRepo, ['info']) as {
+      data: { configPath: string };
+    };
     writeFileSync(
-      path.join(invalidRepo, '.station', 'config.json'),
+      invalidInfo.data.configPath,
       `${JSON.stringify({ backend: 'bogus', version: 1 }, null, 2)}\n`,
       'utf8'
     );
@@ -129,18 +132,20 @@ describe('cli contract e2e', () => {
     const repo = createRepo();
 
     const createOutput = run(repo, ['create', '--title', 'Alpha']);
-    expect(createOutput).toBe('Created station-1: Alpha\n');
+    const createdMatch = /^Created (station-[0-9a-f-]{36}): Alpha\n$/.exec(createOutput);
+    expect(createdMatch).not.toBeNull();
+    const issueId = createdMatch?.[1] ?? '';
 
     const listOutput = run(repo, ['list']);
-    expect(listOutput).toBe('station-1 [open] Alpha\n');
+    expect(listOutput).toBe(`${issueId} [open] Alpha\n`);
 
-    const showOutput = run(repo, ['show', 'station-1']);
-    expect(showOutput).toBe('station-1 Alpha\nstatus: open\npriority: 2\ntype: task\n');
+    const showOutput = run(repo, ['show', issueId]);
+    expect(showOutput).toBe(`${issueId} Alpha\nstatus: open\npriority: 2\ntype: task\n`);
 
-    const closeOutput = run(repo, ['close', 'station-1']);
-    expect(closeOutput).toBe('Closed station-1\n');
+    const closeOutput = run(repo, ['close', issueId]);
+    expect(closeOutput).toBe(`Closed ${issueId}\n`);
 
-    const reopenOutput = run(repo, ['open', 'station-1']);
-    expect(reopenOutput).toBe('Reopened station-1\n');
+    const reopenOutput = run(repo, ['open', issueId]);
+    expect(reopenOutput).toBe(`Reopened ${issueId}\n`);
   });
 });

@@ -6,7 +6,7 @@ import { ensureDatabase } from '../db/database.js';
 export function registerInitCommand(program: Command): void {
   program
     .command('init')
-    .description('Initialize station repo-local state in .station/')
+    .description('Initialize station state in the git common dir')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
       const wantsJson = process.argv.includes('--json');

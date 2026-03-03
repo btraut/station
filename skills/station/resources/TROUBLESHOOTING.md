@@ -18,7 +18,7 @@ A new edge would create a cycle. Remove or reverse one edge.
 
 ## `BACKEND_NOT_IMPLEMENTED`
 
-Use `sqlite` in `.station/config.json`. `linear` and `asana` are stubs in v1.
+Use `sqlite` in `<git-common-dir>/station/config.json`. `linear` and `asana` are stubs in v1.
 
 ## `V1_SCOPE_EXCLUDED`
 
