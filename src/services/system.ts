@@ -22,8 +22,11 @@ export async function getStationInfo() {
 
   return {
     repoRoot: paths.repoRoot,
+    gitCommonDir: paths.gitCommonDir,
     stationDir: paths.stationDir,
     dbPath: paths.dbPath,
+    configPath: paths.configPath,
+    lockPath: paths.lockPath,
     config,
     backends: listBackendAdapters().map((backend) => ({
       name: backend.name,

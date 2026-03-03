@@ -95,7 +95,17 @@ async function runMcpTool(
 }
 
 function normalizeValue(value: unknown): unknown {
-  const volatileKeys = new Set(['createdAt', 'updatedAt', 'closedAt', 'repoRoot', 'stationDir', 'dbPath']);
+  const volatileKeys = new Set([
+    'createdAt',
+    'updatedAt',
+    'closedAt',
+    'repoRoot',
+    'gitCommonDir',
+    'stationDir',
+    'dbPath',
+    'configPath',
+    'lockPath'
+  ]);
 
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeValue(entry));
@@ -165,51 +175,56 @@ describe('mcp parity with cli', () => {
     const successCases: SuccessCase[] = [
       { name: 'init', cliArgs: ['init'], toolName: 'init' },
       { name: 'info', cliArgs: ['info'], toolName: 'info' },
-      { name: 'create', cliArgs: ['create', '--title', 'Ship'], toolName: 'create', toolArgs: { title: 'Ship' } },
+      {
+        name: 'create',
+        cliArgs: ['create', '--title', 'Ship', '--id', 'station-1'],
+        toolName: 'create',
+        toolArgs: { title: 'Ship', id: 'station-1' }
+      },
       {
         name: 'list',
-        setup: [['create', '--title', 'Ship']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1']],
         cliArgs: ['list'],
         toolName: 'list'
       },
       {
         name: 'show',
-        setup: [['create', '--title', 'Ship']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1']],
         cliArgs: ['show', 'station-1'],
         toolName: 'show',
         toolArgs: { id: 'station-1' }
       },
       {
         name: 'update',
-        setup: [['create', '--title', 'Ship']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1']],
         cliArgs: ['update', 'station-1', '--status', 'in_progress', '--priority', '1'],
         toolName: 'update',
         toolArgs: { id: 'station-1', status: 'in_progress', priority: '1' }
       },
       {
         name: 'close',
-        setup: [['create', '--title', 'Ship']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1']],
         cliArgs: ['close', 'station-1'],
         toolName: 'close',
         toolArgs: { id: 'station-1' }
       },
       {
         name: 'reopen',
-        setup: [['create', '--title', 'Ship'], ['close', 'station-1']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1'], ['close', 'station-1']],
         cliArgs: ['reopen', 'station-1'],
         toolName: 'reopen',
         toolArgs: { id: 'station-1' }
       },
       {
         name: 'open alias',
-        setup: [['create', '--title', 'Ship'], ['close', 'station-1']],
+        setup: [['create', '--title', 'Ship', '--id', 'station-1'], ['close', 'station-1']],
         cliArgs: ['open', 'station-1'],
         toolName: 'open',
         toolArgs: { id: 'station-1' }
       },
       {
         name: 'dep add',
-        setup: [['create', '--title', 'A'], ['create', '--title', 'B']],
+        setup: [['create', '--title', 'A', '--id', 'station-1'], ['create', '--title', 'B', '--id', 'station-2']],
         cliArgs: ['dep', 'add', 'station-2', 'station-1'],
         toolName: 'dep.add',
         toolArgs: { issueId: 'station-2', dependsOnId: 'station-1' }
@@ -217,8 +232,8 @@ describe('mcp parity with cli', () => {
       {
         name: 'dep list',
         setup: [
-          ['create', '--title', 'A'],
-          ['create', '--title', 'B'],
+          ['create', '--title', 'A', '--id', 'station-1'],
+          ['create', '--title', 'B', '--id', 'station-2'],
           ['dep', 'add', 'station-2', 'station-1']
         ],
         cliArgs: ['dep', 'list', 'station-2'],
@@ -228,9 +243,9 @@ describe('mcp parity with cli', () => {
       {
         name: 'dep tree',
         setup: [
-          ['create', '--title', 'A'],
-          ['create', '--title', 'B'],
-          ['create', '--title', 'C'],
+          ['create', '--title', 'A', '--id', 'station-1'],
+          ['create', '--title', 'B', '--id', 'station-2'],
+          ['create', '--title', 'C', '--id', 'station-3'],
           ['dep', 'add', 'station-2', 'station-1'],
           ['dep', 'add', 'station-3', 'station-2']
         ],
@@ -241,8 +256,8 @@ describe('mcp parity with cli', () => {
       {
         name: 'dep remove',
         setup: [
-          ['create', '--title', 'A'],
-          ['create', '--title', 'B'],
+          ['create', '--title', 'A', '--id', 'station-1'],
+          ['create', '--title', 'B', '--id', 'station-2'],
           ['dep', 'add', 'station-2', 'station-1']
         ],
         cliArgs: ['dep', 'remove', 'station-2', 'station-1'],
@@ -252,8 +267,8 @@ describe('mcp parity with cli', () => {
       {
         name: 'ready',
         setup: [
-          ['create', '--title', 'A'],
-          ['create', '--title', 'B'],
+          ['create', '--title', 'A', '--id', 'station-1'],
+          ['create', '--title', 'B', '--id', 'station-2'],
           ['dep', 'add', 'station-2', 'station-1']
         ],
         cliArgs: ['ready'],
@@ -261,27 +276,27 @@ describe('mcp parity with cli', () => {
       },
       {
         name: 'label add',
-        setup: [['create', '--title', 'A']],
+        setup: [['create', '--title', 'A', '--id', 'station-1']],
         cliArgs: ['label', 'add', 'station-1', 'v1'],
         toolName: 'label.add',
         toolArgs: { issueId: 'station-1', name: 'v1' }
       },
       {
         name: 'label list',
-        setup: [['create', '--title', 'A'], ['label', 'add', 'station-1', 'v1']],
+        setup: [['create', '--title', 'A', '--id', 'station-1'], ['label', 'add', 'station-1', 'v1']],
         cliArgs: ['label', 'list', 'station-1'],
         toolName: 'label.list',
         toolArgs: { issueId: 'station-1' }
       },
       {
         name: 'label list-all',
-        setup: [['create', '--title', 'A'], ['label', 'add', 'station-1', 'v1']],
+        setup: [['create', '--title', 'A', '--id', 'station-1'], ['label', 'add', 'station-1', 'v1']],
         cliArgs: ['label', 'list-all'],
         toolName: 'label.list-all'
       },
       {
         name: 'label remove',
-        setup: [['create', '--title', 'A'], ['label', 'add', 'station-1', 'v1']],
+        setup: [['create', '--title', 'A', '--id', 'station-1'], ['label', 'add', 'station-1', 'v1']],
         cliArgs: ['label', 'remove', 'station-1', 'v1'],
         toolName: 'label.remove',
         toolArgs: { issueId: 'station-1', name: 'v1' }
@@ -299,7 +314,7 @@ describe('mcp parity with cli', () => {
     const errorCases: ErrorCase[] = [
       {
         name: 'update with no fields',
-        setup: [['create', '--title', 'A']],
+        setup: [['create', '--title', 'A', '--id', 'station-1']],
         cliArgs: ['update', 'station-1'],
         toolName: 'update',
         toolArgs: { id: 'station-1' }
@@ -312,7 +327,7 @@ describe('mcp parity with cli', () => {
       },
       {
         name: 'dep add invalid type',
-        setup: [['create', '--title', 'A'], ['create', '--title', 'B']],
+        setup: [['create', '--title', 'A', '--id', 'station-1'], ['create', '--title', 'B', '--id', 'station-2']],
         cliArgs: ['dep', 'add', 'station-2', 'station-1', '--type', 'invalid'],
         toolName: 'dep.add',
         toolArgs: { issueId: 'station-2', dependsOnId: 'station-1', type: 'invalid' }

@@ -1,7 +1,7 @@
 ---
 name: station
 description: >
-  Repo-local issue tracker for multi-session work with dependencies and persistent
+  Repo-scoped issue tracker for multi-session work with dependencies and persistent
   memory across conversation compaction. Use when work spans sessions, has blockers,
   or needs context recovery after compaction.
 allowed-tools: "Read,Bash(station:*)"
@@ -21,7 +21,7 @@ Git-backed-by-repo context, SQLite-backed state. Station gives agents durable wo
 | Multi-session work | Single-session tasks |
 | Dependency graph | Linear checklist |
 | Survives compaction | Conversation-scoped |
-| Repo-local source of truth | Session-local scratchpad |
+| Repo-scoped source of truth | Session-local scratchpad |
 
 Decision test: "Will I need this context in 2 weeks?" If yes, use Station.
 
@@ -29,7 +29,7 @@ When to use Station:
 - Work spans multiple sessions or days
 - Tasks have blockers/dependencies
 - You need resumable context after compaction
-- You want history in a repo-local system
+- You want history in a repo-scoped system
 
 When to use TodoWrite:
 - Single-session, short work

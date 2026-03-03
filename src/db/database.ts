@@ -4,8 +4,13 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 import { runMigrations } from './migrations.js';
 
+const SQLITE_BUSY_TIMEOUT_MS = 2000;
+
 export function openDatabase(dbPath: string): DatabaseType {
-  const db = new BetterSqlite3(dbPath);
+  const db = new BetterSqlite3(dbPath, { timeout: SQLITE_BUSY_TIMEOUT_MS });
+  db.pragma(`busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
+  db.pragma('journal_mode = WAL');
+  db.pragma('synchronous = NORMAL');
   runMigrations(db);
   return db;
 }

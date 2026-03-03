@@ -17,8 +17,11 @@ export function registerInfoCommand(program: Command): void {
       }
 
       process.stdout.write(`repoRoot: ${payload.repoRoot}\n`);
+      process.stdout.write(`gitCommonDir: ${payload.gitCommonDir}\n`);
       process.stdout.write(`stationDir: ${payload.stationDir}\n`);
       process.stdout.write(`dbPath: ${payload.dbPath}\n`);
+      process.stdout.write(`configPath: ${payload.configPath}\n`);
+      process.stdout.write(`lockPath: ${payload.lockPath}\n`);
       process.stdout.write(`backend: ${payload.config.backend}\n`);
     });
 }

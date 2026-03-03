@@ -67,7 +67,7 @@ station/
 
 ## Scope Reminder
 
-Station v1 is intentionally single-user and repo-local. Command families like `sync`, `agents`, `worktrees`, `gates`, and `chemistry` are excluded.
+Station v1 is intentionally single-user and repo-scoped. Command families like `sync`, `agents`, `worktrees`, `gates`, and `chemistry` are excluded.
 
 ## License
 

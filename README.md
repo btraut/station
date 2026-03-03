@@ -12,7 +12,7 @@ Station is a repo-scoped, single-user issue tracker CLI with Beads-like ergonomi
 ## Requirements
 
 - Node 20+
-- A git repository (Station is repo-local)
+- A git repository (Station is repo-scoped)
 
 ## Install
 
@@ -32,12 +32,12 @@ station list
 station ready
 ```
 
-## Repo-Local Model
+## Repo-Scoped Model
 
-Station stores state inside your repo at `.station/`.
+Station stores state in your repository's git common dir so all worktrees share one source of truth.
 
 ```text
-.station/
+<git-common-dir>/station/
   config.json
   station.db
   station.lock
@@ -54,7 +54,7 @@ Example (`station create --title "Ship v1" --json`):
   "ok": true,
   "data": {
     "issue": {
-      "id": "station-1",
+      "id": "station-7f593361-8b58-4dd0-a5af-8bf8f80a6ff5",
       "type": "task",
       "priority": 2,
       "status": "open",
