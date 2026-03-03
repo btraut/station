@@ -53,7 +53,7 @@ Example (`station create --title "Ship v1" --json`):
   "ok": true,
   "data": {
     "issue": {
-      "id": "station-1",
+      "id": "station-7f593361-8b58-4dd0-a5af-8bf8f80a6ff5",
       "type": "task",
       "priority": 2,
       "status": "open",

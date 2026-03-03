@@ -1,22 +1,12 @@
+import { randomUUID } from 'node:crypto';
 import { Command } from 'commander';
 import { StationError } from '../core/errors.js';
 import { parseIssueFilters, parseIssueStatus, parsePriority } from '../core/cli-parsers.js';
 import { success } from '../core/output.js';
 import { withRepository, wantsJson } from '../core/runtime.js';
 
-function nextIssueId(existingIds: string[]): string {
-  const numbers = existingIds
-    .map((id) => {
-      const match = /^station-(\d+)$/.exec(id);
-      return match ? Number(match[1]) : null;
-    })
-    .filter((value): value is number => value !== null);
-
-  if (numbers.length === 0) {
-    return 'station-1';
-  }
-
-  return `station-${Math.max(...numbers) + 1}`;
+function nextIssueId(): string {
+  return `station-${randomUUID()}`;
 }
 
 function registerReopenLikeCommand(program: Command, name: 'reopen' | 'open', description: string): void {
@@ -52,7 +42,7 @@ export function registerIssueCommands(program: Command): void {
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (options) => {
       const created = await withRepository((repo) => {
-        const id = options.id ?? nextIssueId(repo.listIssues().map((issue) => issue.id));
+        const id = options.id ?? nextIssueId();
         const status = parseIssueStatus(options.status) ?? 'open';
         const priority = parsePriority(options.priority) ?? 2;
 

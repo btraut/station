@@ -20,6 +20,19 @@ afterEach(() => {
 });
 
 describe('sqlite storage', () => {
+  it('configures WAL and busy timeout pragmas', async () => {
+    const dbPath = tempDbPath();
+    await ensureDatabase(dbPath);
+
+    const db = openDatabase(dbPath);
+    const journalMode = db.pragma('journal_mode', { simple: true }) as string;
+    const busyTimeout = db.pragma('busy_timeout', { simple: true }) as number;
+
+    expect(journalMode.toLowerCase()).toBe('wal');
+    expect(busyTimeout).toBeGreaterThanOrEqual(2000);
+    db.close();
+  });
+
   it('initializes schema idempotently', async () => {
     const dbPath = tempDbPath();
 

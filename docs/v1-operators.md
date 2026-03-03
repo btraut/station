@@ -25,3 +25,5 @@ Running one of those returns `V1_SCOPE_EXCLUDED` with structured error details.
 - `ISSUE_NOT_FOUND`: verify issue id via `station list --json`.
 - `DEPENDENCY_CYCLE`: remove or reorder dependency edges.
 - `BACKEND_NOT_IMPLEMENTED`: switch `<git-common-dir>/station/config.json` backend to `sqlite`.
+- `STATION_DB_BUSY`: another process holds a write lock; retry shortly.
+- `STATION_DB_CONFLICT`: write collided on a uniqueness constraint (for example duplicate explicit issue id).
