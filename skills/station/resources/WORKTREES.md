@@ -3,7 +3,7 @@
 Station v1 has no worktree command family.
 
 If you use git worktrees manually:
-- Run `station` from the repo/worktree where `.station/` state should live
+- Run `station` from any worktree; state is shared via `<git-common-dir>/station/`
 - Keep issue ids stable across branches
 - Use labels/notes to track branch context when needed
 

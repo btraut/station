@@ -28,10 +28,11 @@ describe('repo path and runtime contracts', () => {
 
     const paths = await resolveStationPaths(nested);
     expect(paths.repoRoot).toBe(repo);
-    expect(paths.stationDir).toBe(path.join(repo, '.station'));
-    expect(paths.dbPath).toBe(path.join(repo, '.station', 'station.db'));
-    expect(paths.configPath).toBe(path.join(repo, '.station', 'config.json'));
-    expect(paths.lockPath).toBe(path.join(repo, '.station', 'station.lock'));
+    expect(paths.gitCommonDir).toBe(path.join(repo, '.git'));
+    expect(paths.stationDir).toBe(path.join(repo, '.git', 'station'));
+    expect(paths.dbPath).toBe(path.join(repo, '.git', 'station', 'station.db'));
+    expect(paths.configPath).toBe(path.join(repo, '.git', 'station', 'config.json'));
+    expect(paths.lockPath).toBe(path.join(repo, '.git', 'station', 'station.lock'));
   });
 
   it('throws NOT_A_GIT_REPO outside any repository', async () => {

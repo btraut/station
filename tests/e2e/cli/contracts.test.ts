@@ -72,8 +72,11 @@ describe('cli contract e2e', () => {
     const depRepo = createRepo();
 
     runJson(invalidRepo, ['init']);
+    const invalidInfo = runJson(invalidRepo, ['info']) as {
+      data: { configPath: string };
+    };
     writeFileSync(
-      path.join(invalidRepo, '.station', 'config.json'),
+      invalidInfo.data.configPath,
       `${JSON.stringify({ backend: 'bogus', version: 1 }, null, 2)}\n`,
       'utf8'
     );

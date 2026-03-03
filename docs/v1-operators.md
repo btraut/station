@@ -2,8 +2,8 @@
 
 ## Working model
 
-- Station is single-user and repo-local.
-- `.station/station.db` is the source of truth.
+- Station is single-user and repo-scoped.
+- `<git-common-dir>/station/station.db` is the source of truth.
 - `station init` is idempotent; run it safely in existing repos.
 
 ## Backend behavior
@@ -24,4 +24,4 @@ Running one of those returns `V1_SCOPE_EXCLUDED` with structured error details.
 - `NOT_A_GIT_REPO`: run Station inside a git repo.
 - `ISSUE_NOT_FOUND`: verify issue id via `station list --json`.
 - `DEPENDENCY_CYCLE`: remove or reorder dependency edges.
-- `BACKEND_NOT_IMPLEMENTED`: switch `.station/config.json` backend to `sqlite`.
+- `BACKEND_NOT_IMPLEMENTED`: switch `<git-common-dir>/station/config.json` backend to `sqlite`.

@@ -52,8 +52,9 @@ describe('backend adapters', () => {
   it('returns explicit not-implemented error for stub backends', () => {
     const repo = createRepo();
     runJson(repo, ['init']);
+    const info = runJson(repo, ['info']) as { ok: true; data: { configPath: string } };
 
-    const configPath = path.join(repo, '.station', 'config.json');
+    const configPath = info.data.configPath;
     const config = JSON.parse(readFileSync(configPath, 'utf8')) as { backend: string; version: number };
     config.backend = 'linear';
     writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, 'utf8');
