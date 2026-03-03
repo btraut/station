@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { success } from '../core/output.js';
-import { withRepository, wantsJson } from '../core/runtime.js';
+import { wantsJson } from '../core/runtime.js';
+import { addLabel, listAllLabels, listLabels, removeLabel } from '../services/labels.js';
 
 export function registerLabelCommands(program: Command): void {
   const label = program.command('label').description('Issue label commands');
@@ -10,9 +11,7 @@ export function registerLabelCommands(program: Command): void {
     .description('Attach a label to an issue')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, name: string) => {
-      await withRepository((repo) => {
-        repo.addLabel(issueId, name);
-      });
+      await addLabel(issueId, name);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issueId, label: name, added: true }), null, 2)}\n`);
@@ -27,9 +26,7 @@ export function registerLabelCommands(program: Command): void {
     .description('Remove a label from an issue')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string, name: string) => {
-      await withRepository((repo) => {
-        repo.removeLabel(issueId, name);
-      });
+      await removeLabel(issueId, name);
 
       if (wantsJson()) {
         process.stdout.write(
@@ -46,7 +43,7 @@ export function registerLabelCommands(program: Command): void {
     .description('List labels attached to an issue')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (issueId: string) => {
-      const labels = await withRepository((repo) => repo.listLabels(issueId));
+      const labels = await listLabels(issueId);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issueId, labels }), null, 2)}\n`);
@@ -68,7 +65,7 @@ export function registerLabelCommands(program: Command): void {
     .description('List all known labels in this repo')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
-      const labels = await withRepository((repo) => repo.listAllLabels());
+      const labels = await listAllLabels();
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ labels }), null, 2)}\n`);

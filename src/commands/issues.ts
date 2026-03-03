@@ -1,23 +1,7 @@
 import { Command } from 'commander';
-import { StationError } from '../core/errors.js';
-import { parseIssueFilters, parseIssueStatus, parsePriority } from '../core/cli-parsers.js';
 import { success } from '../core/output.js';
-import { withRepository, wantsJson } from '../core/runtime.js';
-
-function nextIssueId(existingIds: string[]): string {
-  const numbers = existingIds
-    .map((id) => {
-      const match = /^station-(\d+)$/.exec(id);
-      return match ? Number(match[1]) : null;
-    })
-    .filter((value): value is number => value !== null);
-
-  if (numbers.length === 0) {
-    return 'station-1';
-  }
-
-  return `station-${Math.max(...numbers) + 1}`;
-}
+import { wantsJson } from '../core/runtime.js';
+import { closeIssue, createIssue, listIssues, reopenIssue, showIssue, updateIssue } from '../services/issues.js';
 
 function registerReopenLikeCommand(program: Command, name: 'reopen' | 'open', description: string): void {
   program
@@ -25,7 +9,7 @@ function registerReopenLikeCommand(program: Command, name: 'reopen' | 'open', de
     .description(description)
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (id: string) => {
-      const issue = await withRepository((repo) => repo.updateIssue(id, { status: 'open' }));
+      const issue = await reopenIssue(id);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issue }), null, 2)}\n`);
@@ -51,22 +35,16 @@ export function registerIssueCommands(program: Command): void {
     .option('--status <status>', 'Issue status (open|in_progress|closed)', 'open')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (options) => {
-      const created = await withRepository((repo) => {
-        const id = options.id ?? nextIssueId(repo.listIssues().map((issue) => issue.id));
-        const status = parseIssueStatus(options.status) ?? 'open';
-        const priority = parsePriority(options.priority) ?? 2;
-
-        return repo.createIssue({
-          id,
-          type: options.type,
-          priority,
-          status,
-          title: options.title,
-          description: options.description,
-          design: options.design,
-          notes: options.notes,
-          acceptance: options.acceptance
-        });
+      const created = await createIssue({
+        id: options.id,
+        type: options.type,
+        priority: options.priority,
+        status: options.status,
+        title: options.title,
+        description: options.description,
+        design: options.design,
+        notes: options.notes,
+        acceptance: options.acceptance
       });
 
       if (wantsJson()) {
@@ -89,7 +67,7 @@ export function registerIssueCommands(program: Command): void {
     .option('--query <query>', 'Filter by text search in title/description/notes')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (options) => {
-      const filters = parseIssueFilters({
+      const issues = await listIssues({
         status: options.status,
         priority: options.priority,
         type: options.type,
@@ -98,8 +76,6 @@ export function registerIssueCommands(program: Command): void {
         labelsAll: options.labelsAll,
         query: options.query
       });
-
-      const issues = await withRepository((repo) => repo.listIssues(filters));
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issues }), null, 2)}\n`);
@@ -121,7 +97,7 @@ export function registerIssueCommands(program: Command): void {
     .description('Show a single issue')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (id: string) => {
-      const issue = await withRepository((repo) => repo.getIssueOrThrow(id));
+      const issue = await showIssue(id);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issue }), null, 2)}\n`);
@@ -147,33 +123,7 @@ export function registerIssueCommands(program: Command): void {
     .option('--acceptance <acceptance>', 'Issue acceptance criteria')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (id: string, options) => {
-      if (
-        options.title === undefined &&
-        options.type === undefined &&
-        options.priority === undefined &&
-        options.status === undefined &&
-        options.description === undefined &&
-        options.design === undefined &&
-        options.notes === undefined &&
-        options.acceptance === undefined
-      ) {
-        throw new StationError('No fields supplied. Provide at least one --field option.', {
-          code: 'NO_UPDATE_FIELDS'
-        });
-      }
-
-      const updated = await withRepository((repo) =>
-        repo.updateIssue(id, {
-          title: options.title,
-          type: options.type,
-          priority: parsePriority(options.priority),
-          status: parseIssueStatus(options.status),
-          description: options.description,
-          design: options.design,
-          notes: options.notes,
-          acceptance: options.acceptance
-        })
-      );
+      const updated = await updateIssue(id, options);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issue: updated }), null, 2)}\n`);
@@ -188,7 +138,7 @@ export function registerIssueCommands(program: Command): void {
     .description('Close an issue')
     .option('--json', 'Output machine-readable JSON', false)
     .action(async (id: string) => {
-      const issue = await withRepository((repo) => repo.updateIssue(id, { status: 'closed' }));
+      const issue = await closeIssue(id);
 
       if (wantsJson()) {
         process.stdout.write(`${JSON.stringify(success({ issue }), null, 2)}\n`);

@@ -1,7 +1,6 @@
 import { Command } from 'commander';
-import { ensureStationLayout, resolveStationPaths } from '../core/paths.js';
 import { success } from '../core/output.js';
-import { ensureDatabase } from '../db/database.js';
+import { initializeStation } from '../services/system.js';
 
 export function registerInitCommand(program: Command): void {
   program
@@ -10,17 +9,13 @@ export function registerInitCommand(program: Command): void {
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
       const wantsJson = process.argv.includes('--json');
-      const paths = await resolveStationPaths();
-      await ensureStationLayout(paths);
-      await ensureDatabase(paths.dbPath);
+      const initialized = await initializeStation();
 
       if (wantsJson) {
-        process.stdout.write(
-          `${JSON.stringify(success({ initialized: true, stationDir: paths.stationDir, dbPath: paths.dbPath }), null, 2)}\n`
-        );
+        process.stdout.write(`${JSON.stringify(success(initialized), null, 2)}\n`);
         return;
       }
 
-      process.stdout.write(`Initialized Station in ${paths.stationDir}\n`);
+      process.stdout.write(`Initialized Station in ${initialized.stationDir}\n`);
     });
 }

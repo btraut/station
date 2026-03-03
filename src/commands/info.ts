@@ -1,8 +1,6 @@
 import { Command } from 'commander';
-import { listBackendAdapters } from '../backend/registry.js';
-import { ensureStationLayout, readConfig, resolveStationPaths } from '../core/paths.js';
 import { success } from '../core/output.js';
-import { ensureDatabase } from '../db/database.js';
+import { getStationInfo } from '../services/system.js';
 
 export function registerInfoCommand(program: Command): void {
   program
@@ -11,21 +9,7 @@ export function registerInfoCommand(program: Command): void {
     .option('--json', 'Output machine-readable JSON', false)
     .action(async () => {
       const wantsJson = process.argv.includes('--json');
-      const paths = await resolveStationPaths();
-      await ensureStationLayout(paths);
-      await ensureDatabase(paths.dbPath);
-      const config = await readConfig(paths);
-
-      const payload = {
-        repoRoot: paths.repoRoot,
-        stationDir: paths.stationDir,
-        dbPath: paths.dbPath,
-        config,
-        backends: listBackendAdapters().map((backend) => ({
-          name: backend.name,
-          supported: backend.supported
-        }))
-      };
+      const payload = await getStationInfo();
 
       if (wantsJson) {
         process.stdout.write(`${JSON.stringify(success(payload), null, 2)}\n`);
