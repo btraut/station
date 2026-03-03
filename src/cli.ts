@@ -6,6 +6,7 @@ import { registerInfoCommand } from './commands/info.js';
 import { registerIssueCommands } from './commands/issues.js';
 import { registerDependencyCommands } from './commands/deps.js';
 import { registerLabelCommands } from './commands/labels.js';
+import { registerMcpCommand } from './commands/mcp.js';
 import { failure, printJson } from './core/output.js';
 import { isStationError, StationError } from './core/errors.js';
 
@@ -56,6 +57,7 @@ registerInfoCommand(program);
 registerIssueCommands(program);
 registerDependencyCommands(program);
 registerLabelCommands(program);
+registerMcpCommand(program);
 
 Promise.resolve()
   .then(() => enforceV1Scope(process.argv))
