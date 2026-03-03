@@ -17,9 +17,10 @@ Station is a repo-scoped, single-user issue tracker CLI with Beads-like ergonomi
 ## Install
 
 ```bash
-npm install
-npm run build
-npm link
+npm i -g @btraut/station
+station --help
+station skill install
+station mcp install
 ```
 
 ## Quickstart
@@ -105,6 +106,8 @@ Example error (`station sync --json`):
 - `station init`
 - `station info`
 - `station -v` / `station --version`
+- `station skill install [--client <id...>]`
+- `station skill status`
 - `station create --title <title> [--type] [--priority] [--description] [--design] [--notes] [--acceptance] [--status]`
 - `station list [--status csv] [--priority csv] [--type csv] [--ids csv] [--labels-any csv] [--labels-all csv] [--query text]`
 - `station show <id>`
@@ -114,6 +117,8 @@ Example error (`station sync --json`):
 - `station open <id>` (alias for `reopen`)
 - `station ready`
 - `station mcp [--name <name>] [--version <version>]`
+- `station mcp install`
+- `station mcp status`
 
 ### Dependencies
 
@@ -133,6 +138,7 @@ Example error (`station sync --json`):
 
 Station v1 does not run a background daemon. MCP support is a local stdio server started directly by the `station` binary:
 
+- Easiest option: `station mcp install`
 - MCP entrypoint: `station mcp`
 - Runtime model: one foreground stdio process per client connection
 - No `stationd` process, no background lifecycle management
@@ -180,7 +186,13 @@ Excluded in v1:
 
 This repo includes an installable Station agent skill at [`skills/station`](skills/station).
 
-Copy it into your skills directory:
+Recommended:
+
+```bash
+station skill install
+```
+
+Manual copy (advanced):
 
 ```bash
 cp -r skills/station ~/.agents/skills/

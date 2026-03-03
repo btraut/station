@@ -8,6 +8,7 @@
   },
   "files": [
     "dist",
+    "skills",
     "README.md",
     "LICENSE"
   ],
@@ -38,6 +39,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "@inquirer/prompts": "^7.10.1",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "better-sqlite3": "^12.4.1",
     "commander": "^14.0.1",

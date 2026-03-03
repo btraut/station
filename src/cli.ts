@@ -7,6 +7,7 @@ import { registerIssueCommands } from './commands/issues.js';
 import { registerDependencyCommands } from './commands/deps.js';
 import { registerLabelCommands } from './commands/labels.js';
 import { registerMcpCommand } from './commands/mcp.js';
+import { registerSkillCommands } from './commands/skill.js';
 import { failure, printJson } from './core/output.js';
 import { isStationError, StationError } from './core/errors.js';
 
@@ -57,6 +58,7 @@ registerInfoCommand(program);
 registerIssueCommands(program);
 registerDependencyCommands(program);
 registerLabelCommands(program);
+registerSkillCommands(program);
 registerMcpCommand(program);
 
 Promise.resolve()
